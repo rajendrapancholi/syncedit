@@ -1,20 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Socket, io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import type { User } from '@/types';
+import { socket as sharedSocket } from '@/lib/socket';
 
 interface UseSocketOptions {
   reconnection?: boolean;
   reconnectionDelay?: number;
   reconnectionDelayMax?: number;
   reconnectionAttempts?: number;
-  autoConnect?: boolean;
 }
-
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
-
-// Global socket instance
-let globalSocket: Socket | null = null;
 
 const historyCache = new Map<string, any[]>();
 let historyCacheAttached = false;
@@ -67,8 +61,9 @@ export const useSocket = (
   user?: User | null,
   options?: UseSocketOptions | null,
 ) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const socket = sharedSocket;
+
+  const [isConnected, setIsConnected] = useState(socket.connected);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const connectionAttemptRef = useRef(0);
@@ -84,36 +79,23 @@ export const useSocket = (
   }, [projectId]);
 
   useEffect(() => {
-    // Use existing global socket if available
-    if (globalSocket?.connected) {
-      setSocket(globalSocket);
-      setIsConnected(true);
-      attachHistoryCache(globalSocket);
-      const currentUser = userRef.current;
-      if (currentUser?.id) {
-        identifyOnce(globalSocket, currentUser.id);
-      }
-      if (projectId) {
-        joinProject(globalSocket, projectId, currentUser ?? null);
-      }
-      return;
-    }
+    if (!options) return;
+    const manager = socket.io;
+    if (options.reconnection !== undefined)
+      manager.reconnection(options.reconnection);
+    if (options.reconnectionDelay !== undefined)
+      manager.reconnectionDelay(options.reconnectionDelay);
+    if (options.reconnectionDelayMax !== undefined)
+      manager.reconnectionDelayMax(options.reconnectionDelayMax);
+    if (options.reconnectionAttempts !== undefined)
+      manager.reconnectionAttempts(options.reconnectionAttempts);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const opts = options || {};
-    const socketOptions = {
-      reconnection: opts.reconnection !== false,
-      reconnectionDelay: opts.reconnectionDelay || 1000,
-      reconnectionDelayMax: opts.reconnectionDelayMax || 5000,
-      reconnectionAttempts: opts.reconnectionAttempts || 5,
-      autoConnect: opts.autoConnect !== false,
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-    };
-
-    setIsConnecting(true);
+  useEffect(() => {
+    attachHistoryCache(socket);
 
     try {
-      const newSocket = io(SOCKET_URL, socketOptions);
 
       const handleConnect = () => {
         setIsConnected(true);
@@ -123,20 +105,19 @@ export const useSocket = (
 
         const currentUser = userRef.current;
         if (currentUser?.id) {
-          identifyOnce(newSocket, currentUser.id);
+          identifyOnce(socket, currentUser.id);
         }
         const pid = projectIdRef.current;
         if (pid) {
-          joinProject(newSocket, pid, currentUser ?? null);
+          joinProject(socket, pid, currentUser ?? null);
         }
       };
 
       const handleDisconnect = (reason: string) => {
         setIsConnected(false);
-        const s = newSocket as any;
-        s.__currentProjectId = undefined;
+        (socket as any).__currentProjectId = undefined;
         if (reason === 'io server disconnect') {
-          newSocket.connect();
+          socket.connect();
         }
       };
 
@@ -153,22 +134,25 @@ export const useSocket = (
         setIsConnecting(false);
       };
 
-      newSocket.on('connect', handleConnect);
-      newSocket.on('disconnect', handleDisconnect);
-      newSocket.on('connect_error', handleConnectError);
-      newSocket.on('reconnect_attempt', handleReconnectAttempt);
-      newSocket.on('reconnect_failed', handleReconnectFailed);
+      socket.on('connect', handleConnect);
+      socket.on('disconnect', handleDisconnect);
+      socket.on('connect_error', handleConnectError);
+      socket.io.on('reconnect_attempt', handleReconnectAttempt);
+      socket.io.on('reconnect_failed', handleReconnectFailed);
 
-      globalSocket = newSocket;
-      setSocket(newSocket);
-      attachHistoryCache(newSocket);
+      if (socket.connected) {
+        handleConnect();
+      } else if (!socket.active) {
+        setIsConnecting(true);
+        socket.connect();
+      }
 
       return () => {
-        newSocket.off('connect', handleConnect);
-        newSocket.off('disconnect', handleDisconnect);
-        newSocket.off('connect_error', handleConnectError);
-        newSocket.off('reconnect_attempt', handleReconnectAttempt);
-        newSocket.off('reconnect_failed', handleReconnectFailed);
+        socket.off('connect', handleConnect);
+        socket.off('disconnect', handleDisconnect);
+        socket.off('connect_error', handleConnectError);
+        socket.io.off('reconnect_attempt', handleReconnectAttempt);
+        socket.io.off('reconnect_failed', handleReconnectFailed);
       };
     } catch (err) {
       const e =
@@ -176,10 +160,10 @@ export const useSocket = (
       setError(e);
       setIsConnecting(false);
     }
-  }, [projectId]);
+  }, []);
 
   useEffect(() => {
-    if (!socket || !isConnected) return;
+    if (!isConnected) return;
     if (user?.id) {
       identifyOnce(socket, user.id);
     }
@@ -188,42 +172,26 @@ export const useSocket = (
     }
   }, [socket, isConnected, user, projectId]);
 
-  // Auto-reconnect on mount
-  useEffect(() => {
-    if (!socket && !isConnecting && !globalSocket?.connected) {
-      const timer = setTimeout(() => {
-        if (!socket && connectionAttemptRef.current < 3) {
-          setIsConnecting(true);
-          connectionAttemptRef.current++;
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [socket, isConnecting]);
-
   return {
-    socket: socket || globalSocket,
-    isConnected: isConnected || globalSocket?.connected || false,
+    socket,
+    isConnected,
     isConnecting,
     error,
   };
 };
 
 export const disconnectSocket = () => {
-  if (globalSocket?.connected) {
-    globalSocket.disconnect();
+  if (sharedSocket?.connected) {
+    sharedSocket.disconnect();
   }
-  globalSocket = null;
   historyCache.clear();
   historyCacheAttached = false;
 };
 
 export const reconnectSocket = () => {
-  if (globalSocket && !globalSocket.connected) {
-    globalSocket.connect();
+  if (!sharedSocket.connected) {
+    sharedSocket.connect();
   }
 };
 
-export const getSocket = (): Socket | null => {
-  return globalSocket;
-};
+export const getSocket = (): Socket => sharedSocket;

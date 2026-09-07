@@ -32,7 +32,8 @@ export function registerFileTreeSocket(io: Server, socket: Socket) {
       type: 'file' | 'folder';
       parentId?: string;
     }) => {
-      console.log("rpojct crated: ", projectId);
+      console.log('projectId crated: ', projectId);
+      console.log("waht is the error in file:create");
       if (
         !canEditProject(
           socket.data.accessLevel,
