@@ -1,0 +1,38 @@
+# Bun files
+/node_modules
+/bun.lockb
+
+# Next.js Build and Production Output
+/.next/
+/out/
+/build
+
+# SWC Compiler Cache
+/.swc/
+
+# Testing
+/coverage
+
+# Local Environment Variables
+.env*.local
+.env
+local.env
+
+# Vercel Deployment Metadata
+.vercel
+
+# TypeScript Cache and Auto-Generated Definitions
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug Logs
+bun-debug.log*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+

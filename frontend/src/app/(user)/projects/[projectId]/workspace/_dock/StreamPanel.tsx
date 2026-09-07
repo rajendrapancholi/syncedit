@@ -1,0 +1,134 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import {
+  Video, VideoOff, Mic, MicOff, Users, PhoneOff, Minimize2, Maximize2,
+} from 'lucide-react';
+import { useProjectSession } from '../../_session/ProjectSessionProvider';
+
+export default function StreamPanel() {
+  const { webrtc } = useProjectSession();
+  const {
+    isConnected, stream, peers, micActive, videoActive,
+    inHuddle, joining, totalUsers, joinHuddle, leaveHuddle, toggleMic, toggleVideo,
+  } = webrtc;
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const userVideo = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (userVideo.current && stream) userVideo.current.srcObject = stream;
+  }, [stream]);
+
+  return (
+    <div className={`flex flex-col gap-3 p-3 bg-card border border-border rounded-xl ${isExpanded ? 'fixed inset-4 z-50' : ''}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users size={14} className="text-primary" />
+          <span className="text-xs font-bold tracking-wide">
+            {inHuddle ? `LIVE HUDDLE · ${totalUsers}` : 'VIDEO HUDDLE'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {inHuddle && (
+            <>
+              <button onClick={toggleMic} className="p-1.5 rounded-md bg-muted hover:bg-muted/80" title={micActive ? 'Mute' : 'Unmute'}>
+                {micActive ? <Mic size={14} /> : <MicOff size={14} className="text-destructive" />}
+              </button>
+              <button onClick={toggleVideo} className="p-1.5 rounded-md bg-muted hover:bg-muted/80" title={videoActive ? 'Camera off' : 'Camera on'}>
+                {videoActive ? <Video size={14} /> : <VideoOff size={14} className="text-destructive" />}
+              </button>
+            </>
+          )}
+          <button onClick={() => setIsExpanded((e) => !e)} className="p-1.5 rounded-md bg-muted hover:bg-muted/80">
+            {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+        </div>
+      </div>
+
+      {!inHuddle ? (
+        <button
+          onClick={joinHuddle}
+          disabled={joining || !isConnected}
+          className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 disabled:opacity-50"
+        >
+          {joining ? 'Joining…' : 'Join Huddle'}
+        </button>
+      ) : (
+        <>
+          <div className={`grid gap-2 ${peers.length === 0 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <div className="relative group overflow-hidden rounded-lg border border-primary/40 bg-muted aspect-video">
+              <video ref={userVideo} muted playsInline autoPlay className="w-full h-full object-cover" />
+              <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-[9px] font-bold text-white">You</div>
+              {!videoActive && (
+                <div className="absolute inset-0 flex items-center justify-center bg-card/95 text-[10px] font-bold text-muted-foreground">
+                  Camera Off
+                </div>
+              )}
+              <div className="absolute top-2 right-2 flex gap-1">
+                {!micActive && <MicOff size={10} className="text-destructive" />}
+                {!videoActive && <VideoOff size={10} className="text-destructive" />}
+              </div>
+            </div>
+
+            {peers.map((peerObj) => (
+              <RemoteVideoBox
+                key={peerObj.peerID}
+                peer={peerObj.peer}
+                name={peerObj.name}
+                videoEnabled={peerObj.videoEnabled}
+                audioEnabled={peerObj.audioEnabled}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={leaveHuddle}
+            className="flex items-center justify-center gap-2 w-full py-2 bg-destructive/10 rounded-md text-[10px] font-bold text-destructive hover:bg-destructive/20 transition-colors"
+          >
+            <PhoneOff size={12} /> Leave Huddle
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function RemoteVideoBox({
+  peer, name, videoEnabled, audioEnabled,
+}: {
+  peer: any; name: string; videoEnabled: boolean; audioEnabled: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const onStream = (remoteStream: MediaStream) => {
+      if (ref.current) ref.current.srcObject = remoteStream;
+    };
+    if (peer && typeof peer.on === 'function') {
+      peer.on('stream', onStream);
+      if (peer.streams?.[0] && ref.current) ref.current.srcObject = peer.streams[0];
+      return () => {
+        if (peer && typeof peer.off === 'function') peer.off('stream', onStream);
+      };
+    }
+  }, [peer]);
+
+  return (
+    <div className="relative group overflow-hidden rounded-lg border border-border bg-muted aspect-video">
+      <video playsInline ref={ref} autoPlay className="w-full h-full object-cover" />
+      <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-[9px] font-bold text-white truncate max-w-[80%]">
+        {name}
+      </div>
+      {!videoEnabled && (
+        <div className="absolute inset-0 flex items-center justify-center bg-card/95 text-[10px] font-bold text-muted-foreground">
+          {name} - Camera Off
+        </div>
+      )}
+      <div className="absolute top-2 right-2 flex gap-1">
+        {!audioEnabled && <MicOff size={10} className="text-yellow-500" />}
+        {!videoEnabled && <VideoOff size={10} className="text-destructive" />}
+      </div>
+    </div>
+  );
+}

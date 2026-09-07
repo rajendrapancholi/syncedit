@@ -1,0 +1,35 @@
+# Bun and Node Dependency Files
+/node_modules
+/bun.lockb
+
+# Bun Native Compilation Outputs
+/bunx
+
+# Production Build Artifacts (if using TypeScript or bundlers)
+/dist
+/build
+/out
+
+# Testing
+/coverage
+/.nyc_output
+
+# Local Environment Variables
+.env*.local
+.env
+local.env
+
+# Runtime Logs
+bun-debug.log*
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+
