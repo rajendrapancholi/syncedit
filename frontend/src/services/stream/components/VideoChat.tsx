@@ -142,7 +142,7 @@ export default function VideoChat({
             {peers.map((peerObj) => (
               <RemoteVideoBox
                 key={peerObj.peerID}
-                peer={peerObj.peer}
+                stream={peerObj.stream}
                 name={peerObj.name}
                 videoEnabled={peerObj.videoEnabled}
                 audioEnabled={peerObj.audioEnabled}
@@ -163,39 +163,32 @@ export default function VideoChat({
 }
 
 function RemoteVideoBox({
-  peer,
+  stream,
   name,
   videoEnabled,
   audioEnabled,
 }: {
-  peer: any;
+  stream: MediaStream | null;
   name: string;
   videoEnabled: boolean;
   audioEnabled: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const [audioBlocked, setAudioBlocked] = useState(false);
 
   useEffect(() => {
-    const onStream = (remoteStream: MediaStream) => {
-      if (ref.current) {
-        ref.current.srcObject = remoteStream;
-      }
-    };
-
-    if (peer && typeof peer.on === 'function') {
-      peer.on('stream', onStream);
-
-      if (peer.streams?.[0] && ref.current) {
-        ref.current.srcObject = peer.streams[0];
-      }
-
-      return () => {
-        if (peer && typeof peer.off === 'function') {
-          peer.off('stream', onStream);
-        }
-      };
-    }
-  }, [peer]);
+    const el = ref.current;
+    if (!el || !stream) return;
+    if (el.srcObject !== stream) el.srcObject = stream;
+    el.muted = false;
+    el.volume = 1;
+    el.play()
+      .then(() => setAudioBlocked(false))
+      .catch((err) => {
+        console.warn('[WebRTC] remote play() blocked:', err);
+        setAudioBlocked(true);
+      });
+  }, [stream]);
 
   return (
     <div className="relative group overflow-hidden rounded-lg border border-border bg-muted aspect-video">
@@ -205,6 +198,19 @@ function RemoteVideoBox({
         autoPlay
         className="w-full h-full object-cover"
       />
+      {audioBlocked && (
+        <button
+          onClick={() =>
+            ref.current
+              ?.play()
+              .then(() => setAudioBlocked(false))
+              .catch(() => {})
+          }
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 text-[10px] font-bold text-white"
+        >
+          🔊 Click to enable audio
+        </button>
+      )}
       <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-[9px] font-bold text-white truncate max-w-[80%]">
         {name}
       </div>

@@ -17,6 +17,7 @@ export interface VideoUser {
 export interface PeerConnection {
   peerID: string;
   peer: any;
+  stream: MediaStream | null;
   videoEnabled: boolean;
   audioEnabled: boolean;
   name: string;
@@ -30,6 +31,41 @@ function normalizeVideoUser(raw: any, fallbackSocketId?: string): VideoUser {
     videoEnabled: raw?.videoEnabled ?? true,
     audioEnabled: raw?.audioEnabled ?? true,
   };
+}
+
+const isMonitorSource = (label: string) => /monitor/i.test(label);
+
+async function getMediaStream(): Promise<MediaStream> {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true,
+  });
+
+  const audioTrack = stream.getAudioTracks()[0];
+  if (!audioTrack || !isMonitorSource(audioTrack.label)) return stream;
+
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const realMic = devices.find(
+    (d) =>
+      d.kind === 'audioinput' && d.deviceId && !isMonitorSource(d.label),
+  );
+
+  if (!realMic) {
+    toast.error('Real microphone nahi mila — sirf "Monitor of ..." device hai');
+    return stream;
+  }
+
+  try {
+    const micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: realMic.deviceId } },
+    });
+    audioTrack.stop();
+    stream.removeTrack(audioTrack);
+    stream.addTrack(micStream.getAudioTracks()[0]);
+  } catch (err) {
+    console.warn('Real mic open nahi hua, default hi use ho raha hai:', err);
+  }
+  return stream;
 }
 
 export function useWebRTC(projectId: string, user: User | null) {
@@ -129,6 +165,7 @@ export function useWebRTC(projectId: string, user: User | null) {
           const entry: PeerConnection = {
             peerID: targetSocketId,
             peer,
+            stream: null,
             videoEnabled: remoteUser.videoEnabled,
             audioEnabled: remoteUser.audioEnabled,
             name: remoteUser.name || 'Unknown',
@@ -142,7 +179,21 @@ export function useWebRTC(projectId: string, user: User | null) {
       };
 
       addPeerToList();
-      peer.on('stream', () => addPeerToList());
+
+      peer.on('stream', (remoteStream: MediaStream) => {
+        console.log(
+          `[WebRTC] remote stream from ${targetSocketId}`,
+          remoteStream
+            .getTracks()
+            .map((t) => `${t.kind}:${t.readyState}:enabled=${t.enabled}`),
+        );
+        const withStream = (list: PeerConnection[]) =>
+          list.map((p) =>
+            p.peerID === targetSocketId ? { ...p, stream: remoteStream } : p,
+          );
+        peersRef.current = withStream(peersRef.current);
+        setPeers(withStream);
+      });
 
       peer.on('error', (err: any) => {
         console.error(`Peer error ${targetSocketId}:`, err);
@@ -173,10 +224,7 @@ export function useWebRTC(projectId: string, user: User | null) {
 
     setJoining(true);
     try {
-      const currentStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      const currentStream = await getMediaStream();
       streamRef.current = currentStream;
       setStream(currentStream);
       setMicActive(true);
