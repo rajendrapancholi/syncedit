@@ -22,7 +22,7 @@ export const ENV = {
   DB_USER: process.env.DB_USER!,
   DB_PASSWORD: process.env.DB_PASSWORD!,
   DB_NAME: process.env.DB_NAME!,
-
+  DATABASE_SSL: process.env.DATABASE_SSL === "true",
   // SECRETS
   JWT_SECRET: process.env.JWT_SECRET!,
   COOKIE_SECRET: process.env.COOKIE_SECRET,

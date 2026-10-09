@@ -7,9 +7,11 @@ const pool = new Pool({
   user: ENV.DB_USER,
   password: ENV.DB_PASSWORD,
   database: ENV.DB_NAME,
-  max: 20, // max connections
+  ssl: ENV.DATABASE_SSL ? { rejectUnauthorized: true } : false,
+  max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // Neon cold start ke liye
+  keepAlive: true,
 });
 
 pool.on("connect", () => {
@@ -17,8 +19,7 @@ pool.on("connect", () => {
 });
 
 pool.on("error", (err) => {
-  console.error("Unexpected PostgreSQL error", err);
-  process.exit(-1);
+  console.error("Unexpected PostgreSQL error on idle client", err);
 });
 
 export default pool;
