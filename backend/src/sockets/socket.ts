@@ -108,15 +108,13 @@ export const initSocket = (httpServer: HTTPServer) => {
   });
 
   io.adapter(createAdapter(redis, redis.duplicate()));
-  
+
   io.use(async (socket, next) => {
     try {
+      const authToken = socket.handshake.auth?.token as string | undefined;
       const rawCookie = socket.handshake.headers.cookie;
-      if (!rawCookie) return next(new Error('Unauthorized'));
-
-      const { token } = parseCookie(rawCookie);
-      if (!token) return next(new Error('Unauthorized'));
-
+      const token =
+        authToken || (rawCookie ? parseCookie(rawCookie).token : undefined);
       if (!token) return next(new Error('Unauthorized'));
 
       const decoded = await verifyToken(token);
