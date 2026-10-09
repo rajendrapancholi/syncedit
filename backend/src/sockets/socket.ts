@@ -1,5 +1,7 @@
 import type { Server as HTTPServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import redis from '../lib/redis';
 import { ENV } from '../config/env';
 import { registerFileTreeSocket } from './fileTree.socket';
 import {
@@ -105,6 +107,8 @@ export const initSocket = (httpServer: HTTPServer) => {
     transports: ['websocket', 'polling'],
   });
 
+  io.adapter(createAdapter(redis, redis.duplicate()));
+  
   io.use(async (socket, next) => {
     try {
       const rawCookie = socket.handshake.headers.cookie;

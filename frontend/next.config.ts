@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  env: {
+    NEXT_PUBLIC_BASE_API:
+      process.env.NEXT_PUBLIC_BASE_API || 'http://127.0.0.1:5000/api',
+    NEXT_PUBLIC_SOCKET_URL:
+      process.env.NEXT_PUBLIC_SOCKET_URL || 'http://127.0.0.1:5000',
+  },
 };
 
 export default nextConfig;

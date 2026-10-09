@@ -44,12 +44,15 @@ export default function EditorGroup({
   return (
     <div className="flex flex-col h-full">
       <Tabs
+        projectId={projectId}
+        readOnly={!canEdit}
         openFiles={openFiles}
         activeFile={activeFile}
         setActiveFile={setActiveFile}
         closeFile={closeFile}
         dirtyFiles={dirtyFiles}
         onNewFile={() => {}}
+        onSave={handleSave}
       />
       <div className="flex-1 relative overflow-hidden">
         {activeFile ? (
@@ -62,6 +65,11 @@ export default function EditorGroup({
             isDirty={dirtyFiles.has(activeFile.id)}
             onDirty={handleDirty}
             onSave={handleSave}
+            openFiles={openFiles}
+            setActiveFile={setActiveFile}
+            closeFile={closeFile}
+            onNewFile={() => {}}
+            dirtyFiles={dirtyFiles}
           />
         ) : (
           <div className="flex-col-center h-full text-muted-foreground text-sm">

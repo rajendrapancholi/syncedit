@@ -47,6 +47,9 @@ app.use("/api/project", projectRoutes);
 app.get("/api/health", (_req: Request, res: Response) => {
   res.send("<h1>Live Code Collaborator API is running...<h1>");
 });
+app.get("/health", (_req: Request, res: Response) => {
+  res.send("<h1>Live Code Collaborator API is running...<h1>");
+});
 
 // Global Error Handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
