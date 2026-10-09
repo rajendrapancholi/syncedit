@@ -52,7 +52,7 @@ export default function Navbar({
             </div>
             {!isEditor && (
               <span className="text-lg font-black tracking-tighter text-foreground">
-                RAJE<span className="text-primary">++</span>
+                SyncEdit<span className="text-primary">++</span>
               </span>
             )}
           </Link>

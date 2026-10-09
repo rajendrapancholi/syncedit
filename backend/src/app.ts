@@ -45,10 +45,10 @@ app.use("/api/project", projectRoutes);
 
 // Health Check
 app.get("/api/health", (_req: Request, res: Response) => {
-  res.send("<h1>Live Code Collaborator API is running...<h1>");
+  res.send("<h1>SyncEdit API is running...<h1>");
 });
 app.get("/health", (_req: Request, res: Response) => {
-  res.send("<h1>Live Code Collaborator API is running...<h1>");
+  res.send("<h1>SyncEdit API is running...<h1>");
 });
 
 // Global Error Handler

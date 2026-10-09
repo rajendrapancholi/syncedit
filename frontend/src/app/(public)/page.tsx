@@ -29,7 +29,7 @@ export default function HomePage() {
           </h1>
           
           <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-10">
-            A lightning-fast live code collaborator. Pair program, mentor, or build 
+            A lightning-fast SyncEdit. Pair program, mentor, or build 
             complex systems in real-time with zero latency and high-fidelity sync.
           </p>
 

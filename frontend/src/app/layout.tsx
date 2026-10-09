@@ -4,8 +4,8 @@ import Providers from "@/shared/providers/Providers";
 import AuthInit from "@/features/auth/authInit";
 
 export const metadata: Metadata = {
-  title: "Live Code Collaborator",
-  description: "Live code collaborator code Streamer.",
+  title: "SyncEdit",
+  description: "SyncEdit code Streamer.",
 };
 
 export default function RootLayout({

@@ -3,7 +3,7 @@ import { Code, Globe, Shield, Heart } from 'lucide-react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About | Live Code Collaborator',
+  title: 'About | SyncEdit',
   description: 'Real-time collaborative code editor for teams',
 };
 

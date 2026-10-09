@@ -5,8 +5,8 @@ import { Metadata } from 'next';
 import React from 'react';
 
 export const metadata: Metadata = {
-    title: "Home | Live Code Collaborator",
-    description: "Live code collaborator code Streamer.",
+    title: "Home | SyncEdit",
+    description: "SyncEdit code Streamer.",
 };
 
 export default function FrotLayout({ children }: { children: React.ReactNode; }) {
