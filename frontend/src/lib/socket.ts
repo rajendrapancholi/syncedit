@@ -15,11 +15,16 @@ class SocketManager {
         reconnectionDelay: 2000,
         reconnectionDelayMax: 10000,
         autoConnect: false,
-        auth: (cb) => {
-          fetch('/socket-token', { credentials: 'same-origin' })
-            .then((r) => (r.ok ? r.json() : {}))
-            .then((d) => cb(d?.token ? { token: d.token } : {}))
-            .catch(() => cb({}));
+        auth: async (cb) => {
+          try {
+            const r = await fetch('/socket-token', {
+              credentials: 'same-origin',
+            });
+            const d: { token?: string } = r.ok ? await r.json() : {};
+            cb(d.token ? { token: d.token } : {});
+          } catch {
+            cb({});
+          }
         },
       });
 
