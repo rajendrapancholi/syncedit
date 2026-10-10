@@ -15,7 +15,7 @@ Multiple developers edit the same files in the browser at the same time, see eac
 ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)
 
-[Live Demo](https://your-demo-url.vercel.app) · [Architecture](#architecture) · [Engineering Highlights](#engineering-highlights) · [Getting Started](#getting-started) · [Run on Kubernetes](#run-on-kubernetes-minikube--kind) · [Roadmap](#roadmap--known-limitations)
+[Live Demo](https://syncedit.vercel.app) · [Architecture](#architecture) · [Engineering Highlights](#engineering-highlights) · [Getting Started](#getting-started) · [Run on Kubernetes](#run-on-kubernetes-minikube--kind) · [Roadmap](#roadmap--known-limitations)
 
 </div>
 
@@ -147,8 +147,6 @@ sequenceDiagram
 | **Infra**    | Kubernetes (minikube), Traefik ingress, HPA, StatefulSet + PVC. Public demo: Vercel (frontend), Render (backend), Neon (Postgres)                                     |
 
 ## Engineering Highlights
-
-These are the parts I would like to talk about in a code review or an interview.
 
 ### Real-time sync
 
