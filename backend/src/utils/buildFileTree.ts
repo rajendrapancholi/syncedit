@@ -1,4 +1,4 @@
-import type { FileNode, Folder, ProjectFile, TreeNode } from "../types/file";
+import type { FileNode, Folder, ProjectFile, TreeNode } from '../types/file';
 
 export function buildFileTree(files: FileNode[]): FileNode[] {
   const map = new Map<string, FileNode>();
@@ -31,7 +31,7 @@ export function buildFileTree(files: FileNode[]): FileNode[] {
 export function buildTree(
   folders: Folder[],
   files: ProjectFile[],
-  projectId: string
+  projectId: string,
 ): TreeNode[] {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
@@ -40,23 +40,23 @@ export function buildTree(
     map.set(f.id, {
       id: f.id,
       name: f.name,
-      type: "folder",
+      type: 'folder',
       parent_id: f.parent_id || null,
       children: [],
     });
   }
 
-    //  Build Folder Hierarchy
+  //  Build Folder Hierarchy
   for (const folder of map.values()) {
     if (folder.parent_id) {
       const parent = map.get(folder.parent_id as string);
       if (parent) {
         parent.children!.push(folder);
       } else {
-        roots.push(folder); 
+        roots.push(folder);
       }
     } else {
-      roots.push(folder); 
+      roots.push(folder);
     }
   }
 
@@ -64,7 +64,7 @@ export function buildTree(
     const node: TreeNode = {
       id: file.id,
       name: file.name,
-      type: "file",
+      type: 'file',
       content: file.content,
       parent_id: file.folder_id ?? projectId,
     };

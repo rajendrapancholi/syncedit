@@ -46,8 +46,7 @@ async function getMediaStream(): Promise<MediaStream> {
 
   const devices = await navigator.mediaDevices.enumerateDevices();
   const realMic = devices.find(
-    (d) =>
-      d.kind === 'audioinput' && d.deviceId && !isMonitorSource(d.label),
+    (d) => d.kind === 'audioinput' && d.deviceId && !isMonitorSource(d.label),
   );
 
   if (!realMic) {
@@ -146,9 +145,22 @@ export function useWebRTC(projectId: string, user: User | null) {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
+            {
+              urls: [
+                'turn:global.relay.metered.ca:80',
+                'turn:global.relay.metered.ca:80?transport=tcp',
+                'turn:global.relay.metered.ca:443',
+                'turns:global.relay.metered.ca:443?transport=tcp',
+              ],
+              username: process.env.NEXT_PUBLIC_TURN_USERNAME,
+              credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
+            },
           ],
         },
       });
+      peer.on('iceStateChange', (state: string) =>
+        console.log(`[ICE] ${targetSocketId}:`, state),
+      );
 
       peer.on('signal', (signal: any) => {
         socket?.emit('webrtc-signal', {

@@ -4,7 +4,7 @@ metadata:
   name: postgres
   namespace: syncedit
 spec:
-  clusterIP: None
+  clusterIP: None # headless service for StatefulSet
   selector:
     app: postgres
   ports:
